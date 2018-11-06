@@ -3,10 +3,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.opencsv.CSVWriter;
 import com.sun.xml.internal.ws.util.StringUtils;
 
 
@@ -36,9 +39,19 @@ public class Extractor {
 			        toFilePath = toFilePath.replaceAll("[.]", "/");
 			        toFilePath = toFilePath.replace("/java", ".java");
 			        File toFileDir = new File(toFilePath);
-			        toFileDir = toFileDir.getAbsoluteFile();
-					File homeDir = new File("/Users/Mohammad/Documents/eecs4314/hbase-2.1.0");
-			        findParentDirectory(homeDir,toFileDir);
+			        //toFileDir = toFileDir.getAbsoluteFile();
+			        toFilePath = findParentDirectory(fromFileUrl,toFileDir);
+			        if (toFilePath.contains("hbase-2.1.0"))
+			        {
+				        String toFileUrl = "";
+						Pattern pattern2 = Pattern.compile("hbase-2.1.0.*$");
+						Matcher matcher2 = pattern2.matcher(fromFilePath);
+						if (matcher2.find()){
+							//System.out.println("test");
+							toFileUrl = matcher2.group();
+							toFilePath = toFileUrl;
+						}
+			        }
 					finalList.add(fromFileUrl+","+toFilePath);
 				}
 		    }
@@ -49,18 +62,18 @@ public class Extractor {
 	}
 	
 	
-	public void findParentDirectory(File dir,File targetPath){
+	public String findParentDirectory(String fromDir,File targetPath){
 		
-		File[] files = dir.listFiles();
-		for (File file : files){
-			if (file.isDirectory())
-				//findParentDirectory(file, targetPath);
-			{
-				System.out.println(file.getName());
-				System.out.println(targetPath);
-			}
+		//System.out.println(fromDir+" : "+targetPath.toString()+" ------------------->");
+		for (int i = 0;i < javaFilePath.size();i++){
+			String curr = javaFilePath.get(i);
+			if (curr.contains(targetPath.toString()))
+				return javaFilePath.get(i);
+				//System.out.println(javaFilePath.get(i));
 		}
 		
+		return targetPath.toString();
+	
 	}
 	
 	public void storeDirectoryContentPath(File dir){
@@ -99,19 +112,36 @@ public class Extractor {
 			//System.out.println(test.javaFilePath.size());
 			for (int i = 0;i < urls.size();i++){
 				//System.out.println(urls.get(i));
+				test.extract(urls.get(i));
 			}
 			
-			test.extract(urls.get(100));
+			//test.extract(urls.get(100));
 			//System.out.println(test.finalList.size());
-			for (int i = 0;i < test.finalList.size();i++){
-				//System.out.println(test.finalList.get(i));
-			}
+			
 			
 		}
 		catch (Exception e)
 		{
 			System.out.println(e.getMessage());
 		}
+		
+		try {
+			CSVWriter writer = new CSVWriter(new FileWriter("manualResult2.csv"));
+			String[] header = {"From File","To File"};
+			writer.writeNext(header);
+			
+			for (int i = 0;i < test.finalList.size();i++){
+				String[] item = test.finalList.get(i).split(",");
+				//System.out.println(test.finalList.get(i));
+				writer.writeNext(item);
+			}
+			
+			writer.close();
+			
+		}
+		 catch (IOException e){
+			 System.out.println(e.getMessage());
+		 }
 		
 		
 		
