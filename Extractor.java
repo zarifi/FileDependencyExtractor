@@ -1,8 +1,10 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +19,12 @@ public class Extractor {
 	
 	public ArrayList<String> finalList = new ArrayList<String>();	
 	
+	public ArrayList<String> fileDifferenceList = new ArrayList<String>();
+
 	public ArrayList<String> javaFilePath = new ArrayList<String>();
+	
+	public ArrayList<String> instances = new ArrayList<String>();
+	
 	// store the dependencies of current .java file based on import keywords
 	public void extract (String fromFilePath){
 		
@@ -40,19 +47,25 @@ public class Extractor {
 			        toFilePath = toFilePath.replace("/java", ".java");
 			        File toFileDir = new File(toFilePath);
 			        //toFileDir = toFileDir.getAbsoluteFile();
+			        //System.out.println(fromFileUrl+" -------> "+toFilePath);
 			        toFilePath = findParentDirectory(fromFileUrl,toFileDir);
+			        //System.out.println(fromFileUrl+" -------> "+toFilePath);
+
+			        //System.out.println(toFilePath);
 			        if (toFilePath.contains("hbase-2.1.0"))
 			        {
 				        String toFileUrl = "";
 						Pattern pattern2 = Pattern.compile("hbase-2.1.0.*$");
-						Matcher matcher2 = pattern2.matcher(fromFilePath);
+						Matcher matcher2 = pattern2.matcher(toFilePath);
 						if (matcher2.find()){
 							//System.out.println("test");
 							toFileUrl = matcher2.group();
 							toFilePath = toFileUrl;
 						}
 			        }
-					finalList.add(fromFileUrl+","+toFilePath);
+			        if (toFilePath.startsWith("org"))
+			        	fileDifferenceList.add(fromFileUrl+","+toFilePath);
+					finalList.add("cLinks "+fromFileUrl+" "+toFilePath);
 				}
 		    }
 		}
@@ -90,6 +103,7 @@ public class Extractor {
 					if (currFilePath.contains(".java")){
 						//System.out.println(currFilePath);
 						javaFilePath.add(currFilePath.toString());
+						instances.add("$INSTANCE "+currFilePath.toString()+" cFile");
 					}
 				}
 			}
@@ -127,14 +141,16 @@ public class Extractor {
 		
 		try {
 			CSVWriter writer = new CSVWriter(new FileWriter("manualResult2.csv"));
-			String[] header = {"From File","To File"};
-			writer.writeNext(header);
 			
-			for (int i = 0;i < test.finalList.size();i++){
-				String[] item = test.finalList.get(i).split(",");
-				//System.out.println(test.finalList.get(i));
-				writer.writeNext(item);
-			}
+			String[] header = {"From File","To File"};
+			//writer.writeNext(header);
+			
+//			for (int i = 0;i < test.finalList.size();i++){
+//				//String[] item = test.finalList.get(i).split(",");
+//		
+//				//System.out.println(item[0]+ "  --->  "+item[1]);
+//			    //writer.writeNext(item);
+//			}
 			
 			writer.close();
 			
@@ -143,6 +159,46 @@ public class Extractor {
 			 System.out.println(e.getMessage());
 		 }
 		
+		try {
+			CSVWriter writer = new CSVWriter(new FileWriter("manualResultDiff.csv"));
+			String[] header = {"From File","To File"};
+			//writer.writeNext(header);
+			
+//			for (int i = 0;i < test.fileDifferenceList.size();i++){
+//				String[] item = test.fileDifferenceList.get(i).split(",");
+//				System.out.println(test.finalList.get(i));
+//				//writer.writeNext(item);
+//			}
+			
+			//writer.close();
+			
+		}
+		 catch (IOException e){
+			 System.out.println(e.getMessage());
+		 }
+		
+		
+		try {
+    		 PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/Users/Mohammad/Documents/workspace/DependencyExtractor/src/manualDependency.ta", true)));
+    		 out.println("FACT TUPLE :");
+    		 for (int i = 0;i < test.instances.size();i++){
+    			    String instanceUrl = "";
+    				Pattern pattern = Pattern.compile("hbase-2.1.0.*$");
+    				Matcher matcher = pattern.matcher(test.instances.get(i));
+    				if (matcher.find()){
+    					//System.out.println("test");
+    					instanceUrl = matcher.group();
+    				}
+    				System.out.println(instanceUrl);
+    			 out.println("$INSTANCE "+instanceUrl);
+    		 }
+    		 
+    		 for (int i = 0;i < test.finalList.size();i++){
+ 				out.println(test.finalList.get(i));
+ 			}   
+    		 //out.println(lastId+","+sender+","+message + "\n");
+			 out.close();
+    } catch (IOException e) {}
 		
 		
 		
